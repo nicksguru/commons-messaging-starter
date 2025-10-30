@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>guru.nicks.commons</groupId>
+        <artifactId>parent</artifactId>
+        <version>1.8.0</version><!-- [BVM] -->
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- groupId is redundant (inherited from parent), but required by Maven Central -->
+    <groupId>guru.nicks.commons</groupId>
+    <artifactId>messaging-starter</artifactId>
+    <version>${guru.nicks.commons.version}</version>
+
+    <name>Nicks.Guru Commons Messaging Starter</name>
+    <description>Starter for sending and receiving messages</description>
+    <url>https://github.com/nicksguru/commons-messaging-starter</url>
+
+    <licenses>
+        <license>
+            <name>GNU Lesser General Public License, Version 3</name>
+            <url>https://www.gnu.org/licenses/lgpl-3.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>Nick S.</name>
+            <email>job-offers@nicks.guru</email>
+            <url>https://nicks.guru</url>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:git://github.com/nicksguru/commons-messaging-starter.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/nicksguru/commons-messaging-starter.git</developerConnection>
+        <url>https://github.com/nicksguru/commons-messaging-starter</url>
+    </scm>
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>https://github.com/nicksguru/commons-messaging-starter/issues</url>
+    </issueManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>guru.nicks.commons</groupId>
+            <artifactId>utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>guru.nicks.commons</groupId>
+            <artifactId>cucumber-test-starter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-stream-kafka</artifactId>
+        </dependency>
+        <!-- (de)compression of Kafka messages -->
+        <dependency>
+            <groupId>org.xerial.snappy</groupId>
+            <artifactId>snappy-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.jms</groupId>
+            <artifactId>jakarta.jms-api</artifactId>
+        </dependency>
+
+        <!-- @ConstraintArguments -->
+        <dependency>
+            <groupId>am.ik.yavi</groupId>
+            <artifactId>yavi</artifactId>
+        </dependency>
+        <!-- @Builder, @Slf4j, etc. -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+</project>
