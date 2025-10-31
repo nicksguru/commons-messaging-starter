@@ -5,23 +5,20 @@ import org.springframework.messaging.MessageHeaders;
 import java.util.function.BiConsumer;
 
 /**
- * Message consumer expecting a certain payload class. The expected message type (if
- * {@link #consumeUnknownMessageTypes()} is {@code false}) is inferred from the payload class (first argument to
- * {@link MessageConsumer#accept(Object, Object)}).
+ * Message consumer expecting a certain payload class.
  * <p>
- * WARNING: one message type may have only one consumer within the same {@link #getMessageListenerBeanName()}.
- * Otherwise, if one consumer succeeds and another fails, the message would be redelivered to ALL of them, which may
- * cause side effects.
+ * WARNING: one message type may have only one consumer within the same {@link #getMessageListenerId()}. Otherwise, if
+ * one consumer succeeds and the other fails, the message would be re-delivered to BOTH of them, which may cause side
+ * effects.
  *
  * @param <P> payload type
  */
 public interface MessageConsumer<P> extends BiConsumer<P, MessageHeaders> {
 
     /**
-     * {@link DispatchingMessageListener} beans only see consumers referring to their bean name and dispatch messages to
-     * them.
+     * Each {@link DispatchingMessageListener} only dispatches messages to consumers referring to their ID.
      */
-    String getMessageListenerBeanName();
+    String getMessageListenerId();
 
     /**
      * If {@code true}, this consumer is called by the bound listener for:

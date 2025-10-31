@@ -16,17 +16,18 @@ import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import static guru.nicks.validation.dsl.ValiDsl.checkNotNull;
+
 /**
- * Dispatches messages to consumers based on {@link #findMessageConsumer(Message)}. One message type may have only one
- * consumer within the same {@link #getBeanName()}. Otherwise, if one consumer succeeds and another fails, the message
- * would be redelivered to ALL of them, which may cause side effects.
+ * Dispatches messages to consumers based on {@link #findMessageConsumer(Message)} result. One message type may have
+ * only one consumer within the same {@link #getId()}. Otherwise, if one consumer succeeds and another fails, the
+ * message would be redelivered to ALL of them, which may cause side effects.
  * <p>
  * Consider annotating concrete listener beans with
  * {@code @ConditionalOnPropertyNotBlank("PREFIX.concreteListenerBeanNameSUFFIX")} (where PREFIX is
@@ -53,7 +54,7 @@ public abstract class DispatchingMessageListener implements Consumer<Message<Map
 
     @Getter
     @NonNull // Lombok creates runtime nullness check for this own annotation only
-    private final List<MessageConsumer<?>> allMessageConsumers;
+    private final List<MessageConsumer> allMessageConsumers;
 
     @Getter
     @NonNull // Lombok creates runtime nullness check for this own annotation only
@@ -66,13 +67,17 @@ public abstract class DispatchingMessageListener implements Consumer<Message<Map
     /**
      * Performs the following flow:
      * <ul>
+     *     <li>stores {@link #getAppName()} in {@link LogContext#APP_NAME}</li>
+     *     <li>stores {@link KafkaHeaders#RECEIVED_TOPIC} in {@link LogContext#MESSAGE_TOPIC}</li>
+     *     <li>stores {@link MessageHeaders#ID} in {@link LogContext#MESSAGE_ID}</li>
+     *     <li>logs message (what's exactly logged depends on its {@code toString()})</li>
      *     <li>find message consumer with {@link #findMessageConsumer(Message)}</li>
-     *     <li>no consumers found - call {@link #ignoreMessage(Message)}</li>
-     *     <li>consumers found - call {@link #consumeMessage(Message, MessageConsumer)} which, for each consumer:
+     *     <li>no consumer found - calls {@link #ignoreMessage(Message)}</li>
+     *     <li>consumers found - calls {@link #consumeMessage(Message, MessageConsumer)} which, for each consumer:
      *          <ul>
      *              <li>deserializes message payload to {@link #getExpectedPayloadClass(MessageConsumer)}</li>
      *              <li>validates payload with {@link #validatePayload(Object)}</li>
-     *              <li>passes control on to consumer ({@link MessageConsumer#accept(Object, Object)})</li>
+     *              <li>passes control on to consumer's ({@link MessageConsumer#accept(Object, Object)})</li>
      *          </ul>
      *     </li>
      * </ul>
@@ -98,41 +103,34 @@ public abstract class DispatchingMessageListener implements Consumer<Message<Map
     }
 
     /**
-     * Returns this listener's bean name - it's referred to by message consumers in
-     * {@link MessageConsumer#getMessageListenerBeanName()}. This method is only needed for binding consumers to
-     * listeners.
+     * Returns this listener's unique ID (for example, the bean name) - it's referred to by message consumers as
+     * {@link MessageConsumer#getMessageListenerId()}. This is needed to bind consumers to listeners in constructor.
      *
-     * @return bean name
+     * @return listener ID
      */
-    protected abstract String getBeanName();
+    public abstract String getId();
 
     /**
-     * Finds consumer for the given message. Why not multiple consumers? Because if one consumer succeeds and another
-     * fails, the message will be redelivered to ALL of them, which may cause inconsistency.
+     * Finds a consumer for the given message. Why not multiple consumers? Because if one consumer succeeds and the
+     * other fails, the message would be re-delivered to BOTH of them, which may cause side effects.
      *
      * @param message message
      * @return consumers, in undefined order
      */
-    @SuppressWarnings("java:S1452") // allow wildcards
-    protected abstract Optional<MessageConsumer<?>> findMessageConsumer(Message<Map<String, Object>> message);
+    protected abstract Optional<MessageConsumer> findMessageConsumer(Message<Map<String, Object>> message);
 
     /**
-     * Collects all Spring beans having their {@link MessageConsumer#getMessageListenerBeanName()} equal to
-     * {@link #getBeanName()}.
+     * Finds {@link #getAllMessageConsumers()} having {@link MessageConsumer#getMessageListenerId()} equal to
+     * {@link #getId()}.
      *
      * @return message consumers bound to this message listener
      */
-    @SuppressWarnings("java:S1452")  // allow wildcards
-    protected List<MessageConsumer<?>> collectLinkedMessageConsumers() {
-        var pertinentMessageConsumers = new HashSet<MessageConsumer<?>>();
+    protected List<MessageConsumer> findLinkedMessageConsumers() {
+        checkNotNull(getId(), "listener ID should not be null");
 
-        for (MessageConsumer<?> messageConsumer : allMessageConsumers) {
-            if (getBeanName().equals(messageConsumer.getMessageListenerBeanName())) {
-                pertinentMessageConsumers.add(messageConsumer);
-            }
-        }
-
-        return List.copyOf(pertinentMessageConsumers);
+        return allMessageConsumers.stream()
+                .filter(consumer -> getId().equals(consumer.getMessageListenerId()))
+                .toList();
     }
 
     /**
@@ -141,16 +139,15 @@ public abstract class DispatchingMessageListener implements Consumer<Message<Map
      * @param message  message
      * @param consumer message consumers
      */
-    @SuppressWarnings("unchecked")
     @ConstraintArguments
-    protected void consumeMessage(Message<Map<String, Object>> message, MessageConsumer<?> consumer) {
+    protected void consumeMessage(Message<Map<String, Object>> message, MessageConsumer consumer) {
         Object payload = objectMapper.convertValue(message.getPayload(), getExpectedPayloadClass(consumer));
 
         log.debug("Deserialized message in listener [{}] for consumer [{}]: {}",
                 getClass().getName(), consumer.getClass().getName(), payload);
 
         validatePayload(payload);
-        ((MessageConsumer<Object>) consumer).accept(payload, message.getHeaders());
+        consumer.accept(payload, message.getHeaders());
     }
 
     /**

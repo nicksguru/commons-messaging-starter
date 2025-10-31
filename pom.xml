@@ -5,7 +5,7 @@
     <parent>
         <groupId>guru.nicks.commons</groupId>
         <artifactId>parent</artifactId>
-        <version>1.8.0</version><!-- [BVM] -->
+        <version>1.8.1</version><!-- [BVM] -->
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -15,7 +15,7 @@
     <version>${guru.nicks.commons.version}</version>
 
     <name>Nicks.Guru Commons Messaging Starter</name>
-    <description>Starter for sending and receiving messages</description>
+    <description>Starter for sending and receiving (Kafka) messages</description>
     <url>https://github.com/nicksguru/commons-messaging-starter</url>
 
     <licenses>

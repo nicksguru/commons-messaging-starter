@@ -1,6 +1,6 @@
 # [Nicks.Guru](https://nicks.guru) Commons Messaging Starter
 
-Starter for sending and receiving messages.
+Starter for sending and receiving (Kafka) messages.
 
 ## Usage
 

@@ -49,7 +49,7 @@ public class TypeBasedDispatchingMessageListenerSteps {
 
     // DI
     private final TextWorld textWorld;
-    private final List<MessageConsumer<?>> messageConsumers = new ArrayList<>();
+    private final List<MessageConsumer> messageConsumers = new ArrayList<>();
     @Mock
     private MessageTypeResolver mockMessageTypeResolver;
     @Mock
@@ -224,7 +224,7 @@ public class TypeBasedDispatchingMessageListenerSteps {
     private static class NonTypeAwareMessageConsumer implements MessageConsumer<NonTypeAwareMessage> {
 
         @Override
-        public String getMessageListenerBeanName() {
+        public String getMessageListenerId() {
             return "testListener";
         }
 
@@ -256,12 +256,12 @@ public class TypeBasedDispatchingMessageListenerSteps {
         }
 
         @Override
-        protected String getBeanName() {
+        public String getId() {
             return "testListener";
         }
 
         @Override
-        protected List<MessageConsumer<?>> collectLinkedMessageConsumers() {
+        protected List<MessageConsumer> findLinkedMessageConsumers() {
             if (noConsumers) {
                 return List.of();
             }
@@ -283,7 +283,7 @@ public class TypeBasedDispatchingMessageListenerSteps {
         }
 
         @Override
-        public String getMessageListenerBeanName() {
+        public String getMessageListenerId() {
             return "testListener";
         }
 
