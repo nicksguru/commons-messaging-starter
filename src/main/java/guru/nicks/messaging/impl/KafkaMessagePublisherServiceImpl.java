@@ -13,7 +13,6 @@ import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
-import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -24,7 +23,6 @@ import java.util.Optional;
 /**
  * Publishes messages to Kafka topics using Spring Cloud Stream.
  */
-@Service
 @RequiredArgsConstructor
 @Slf4j
 public class KafkaMessagePublisherServiceImpl implements MessagePublisherService {
