@@ -3,9 +3,11 @@ package guru.nicks.commons.messaging.listener;
 import guru.nicks.commons.condition.ConditionalOnPropertyNotBlank;
 import guru.nicks.commons.log.domain.LogContext;
 import guru.nicks.commons.utils.ReflectionUtils;
+import guru.nicks.commons.utils.json.JsonUtils;
 import guru.nicks.commons.validation.AnnotationValidator;
 
 import am.ik.yavi.meta.ConstraintArguments;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.ValidationException;
 import lombok.Getter;
@@ -90,7 +92,16 @@ public abstract class DispatchingMessageListener implements Consumer<Message<Map
             LogContext.APP_NAME.put(appName);
             LogContext.MESSAGE_TOPIC.put(message.getHeaders().get(KafkaHeaders.RECEIVED_TOPIC));
             LogContext.MESSAGE_ID.put(message.getHeaders().get(MessageHeaders.ID));
-            log.debug("Received message in listener [{}]: {}", getClass().getName(), message);
+
+            // don't log raw payload, rather mask it (convert to JSON first)
+            try {
+                String json = objectMapper.writeValueAsString(message);
+                log.debug("Received message in listener [{}]: {}", getClass().getName(),
+                        JsonUtils.maskSensitiveJsonFields(json));
+            } catch (JsonProcessingException ex) {
+                log.warn("Received message in listener [{}] (can't serialize message to masked JSON for logging)",
+                        getClass().getName());
+            }
 
             findMessageConsumer(message).ifPresentOrElse(
                     consumer -> consumeMessage(message, consumer),
