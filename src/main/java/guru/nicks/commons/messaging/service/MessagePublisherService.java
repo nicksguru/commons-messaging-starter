@@ -11,43 +11,25 @@ public interface MessagePublisherService {
 
     /**
      * Publishes to the given topic.
-     * <p>
-     * NOTE: producer must be configured to borrow the partition key from {@code headers['partitionKey']}.
      *
-     * @param topic        topic
-     * @param payload      payload
-     * @param partitionKey partition key
+     * @param topic      topic
+     * @param payload    payload
+     * @param messageKey message key ({@link Object#toString()} will be called if it's not {@code null}) affecting how
+     *                   Kafka picks a partition for the message
      * @throws IllegalArgumentException payload class is not one of those that {@link MessageTypeResolver} accepts in
      *                                  its {@code writeMessageType} methods
      */
-    void publish(String topic, Object payload, @Nullable String partitionKey);
-
-    /**
-     * Publishes to the given topic.
-     * <p>
-     * NOTE: producer must be configured to borrow the partition key from {@code headers['partitionKey']}.
-     *
-     * @param topic        topic
-     * @param payload      payload
-     * @param partitionKey partition key
-     * @param messageKey   message key (string)
-     * @throws IllegalArgumentException payload class is not one of those that {@link MessageTypeResolver} accepts in
-     *                                  its {@code writeMessageType} methods
-     */
-    void publish(String topic, Object payload, @Nullable String partitionKey, String messageKey);
+    void publish(String topic, Object payload, @Nullable Object messageKey, MessageTypeResolver messageTypeResolver);
 
     /**
      * Publishes payload to the given topic.
-     * <p>
-     * NOTE: producer must be configured to borrow the partition key from {@code headers['partitionKey']}.
      *
-     * @param topic        topic
-     * @param payload      payload
-     * @param partitionKey partition key
-     * @param messageKey   message key (bytes)
+     * @param topic      topic
+     * @param payload    payload
+     * @param messageKey message key affecting how Kafka picks a partition for the message
      * @throws IllegalArgumentException payload class is not one of those that {@link MessageTypeResolver} accepts in
      *                                  its {@code writeMessageType} methods
      */
-    void publish(String topic, Object payload, @Nullable String partitionKey, @Nullable byte[] messageKey);
+    void publish(String topic, Object payload, @Nullable byte[] messageKey, MessageTypeResolver messageTypeResolver);
 
 }

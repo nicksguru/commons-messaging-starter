@@ -3,7 +3,10 @@ package guru.nicks.commons.messaging.impl;
 import guru.nicks.commons.messaging.TypeAwareMessage;
 import guru.nicks.commons.messaging.resolver.MessageTypeResolver;
 import guru.nicks.commons.messaging.service.MessagePublisherService;
+import guru.nicks.commons.utils.json.JsonUtils;
 
+import am.ik.yavi.meta.ConstraintArguments;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Nullable;
@@ -15,9 +18,10 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
 
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
+
+import static guru.nicks.commons.validation.dsl.ValiDsl.checkNotBlank;
+import static guru.nicks.commons.validation.dsl.ValiDsl.checkNotNull;
 
 
 /**
@@ -32,42 +36,47 @@ public class KafkaMessagePublisherServiceImpl implements MessagePublisherService
      * works in functional style listeners only. Here, {@link StreamBridge#send(String, Object)} is used instead.
      */
     private final StreamBridge streamBridge;
-    private final MessageTypeResolver messageTypeResolver;
     private final ObjectMapper objectMapper;
 
     @Override
-    public void publish(String topic, Object payload, @Nullable String partitionKey) {
-        publishInternal(topic, payload, partitionKey, null);
-    }
-
-    @Override
-    public void publish(String topic, Object payload, @Nullable String partitionKey, @Nullable String messageKey) {
+    public void publish(String topic, Object payload, @Nullable Object messageKey,
+            MessageTypeResolver messageTypeResolver) {
         // convert to bytes to avoid: 'org.apache.kafka.common.errors.SerializationException: Can't convert key of class
         // class java.lang.String to class org.apache.kafka.common.serialization.ByteArraySerializer specified in
         // key.serializer'
-        byte[] messageKeyBytes = (messageKey == null) ? null : messageKey.getBytes(StandardCharsets.UTF_8);
-        publishInternal(topic, payload, partitionKey, messageKeyBytes);
+        byte[] messageKeyBytes = null;
+
+        if (messageKey != null) {
+            String str = messageKey.toString();
+
+            if (str != null) {
+                messageKeyBytes = str.getBytes(StandardCharsets.UTF_8);
+            }
+        }
+
+        publishInternal(topic, payload, messageKeyBytes, messageTypeResolver);
     }
 
     @Override
-    public void publish(String topic, Object payload, @Nullable String partitionKey, @Nullable byte[] messageKey) {
-        publishInternal(topic, payload, partitionKey, messageKey);
+    public void publish(String topic, Object payload, @Nullable byte[] messageKey,
+            MessageTypeResolver messageTypeResolver) {
+        publishInternal(topic, payload, messageKey, messageTypeResolver);
     }
 
-    private void publishInternal(String topic, Object payload,
-            @Nullable String partitionKey, @Nullable byte[] messageKey) {
+    @ConstraintArguments
+    private void publishInternal(String topic, Object payload, @Nullable byte[] messageKey,
+            MessageTypeResolver messageTypeResolver) {
+        checkNotBlank(topic, _KafkaMessagePublisherServiceImplPublishInternalArgumentsMeta.TOPIC.name());
+        checkNotNull(payload, _KafkaMessagePublisherServiceImplPublishInternalArgumentsMeta.PAYLOAD.name());
+
         // avoid unchecked map assignment (TypeReference instead of Map.class)
         Map<String, Object> payloadAsMap = objectMapper.convertValue(payload, new TypeReference<>() {
         });
 
-        // MessageHeaders are immutable, which doesn't fit here
-        var headers = new HashMap<String, Object>();
-        // Spring Cloud Stream complains if its partitionKeyExpression yields null value, hence '' as fallback
-        headers.put("partitionKey", Optional.ofNullable(partitionKey).orElse(""));
-
-        if (messageKey != null) {
-            headers.put(KafkaHeaders.KEY, messageKey);
-        }
+        // MessageHeaders object is immutable, which doesn't fit here
+        Map<String, Object> headers = (messageKey != null)
+                ? Map.of(KafkaHeaders.KEY, messageKey)
+                : Map.of();
 
         // retrieve message type out of known classes
         switch (payload) {
@@ -86,7 +95,15 @@ public class KafkaMessagePublisherServiceImpl implements MessagePublisherService
         }
 
         Message<Map<String, Object>> message = new GenericMessage<>(payloadAsMap, headers);
-        log.info("Publishing to topic '{}': {}", topic, message);
+
+        // don't log raw payload, rather mask it (convert to JSON first)
+        try {
+            String json = objectMapper.writeValueAsString(message);
+            log.debug("Publishing to topic '{}': {}", topic, JsonUtils.maskSensitiveJsonFields(json));
+        } catch (JsonProcessingException ex) {
+            log.warn("Publishing to topic '{}' (can't serialize message to masked JSON for logging)", topic);
+        }
+
         streamBridge.send(topic, message);
     }
 

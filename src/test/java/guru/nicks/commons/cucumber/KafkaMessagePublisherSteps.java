@@ -4,7 +4,7 @@ import guru.nicks.commons.cucumber.world.TextWorld;
 import guru.nicks.commons.messaging.MessageType;
 import guru.nicks.commons.messaging.TypeAwareMessage;
 import guru.nicks.commons.messaging.impl.KafkaMessagePublisherServiceImpl;
-import guru.nicks.commons.messaging.resolver.MessageTypeResolver;
+import guru.nicks.commons.messaging.impl.NoOpMessageTypeResolver;
 import guru.nicks.commons.messaging.service.MessagePublisherService;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -32,9 +32,6 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -47,8 +44,6 @@ public class KafkaMessagePublisherSteps {
     @Mock
     private StreamBridge streamBridge;
     @Mock
-    private MessageTypeResolver messageTypeResolver;
-    @Mock
     private ObjectMapper objectMapper;
     @Captor
     private ArgumentCaptor<Message<Map<String, Object>>> messageCaptor;
@@ -59,7 +54,6 @@ public class KafkaMessagePublisherSteps {
     private MessagePublisherService publisherService;
     private String topic;
     private String payloadType;
-    private String partitionKey;
     private String messageKeyString;
     private byte[] messageKeyBytes;
 
@@ -69,16 +63,11 @@ public class KafkaMessagePublisherSteps {
     @Before
     public void beforeEachScenario() {
         closeableMocks = MockitoAnnotations.openMocks(this);
-        publisherService = new KafkaMessagePublisherServiceImpl(streamBridge, messageTypeResolver, objectMapper);
+        publisherService = new KafkaMessagePublisherServiceImpl(streamBridge, objectMapper);
         payloadAsMap = new HashMap<>();
 
         when(objectMapper.convertValue(any(), any(TypeReference.class)))
                 .thenReturn(payloadAsMap);
-
-        doNothing().when(messageTypeResolver).writeMessageType(
-                any(TypeAwareMessage.class), anyMap(), anyMap());
-        doNothing().when(messageTypeResolver).writeMessageType(
-                anyMap(), anyMap(), anyMap());
 
         // mock message publisher
         when(streamBridge.send(any(String.class), any(Message.class)))
@@ -112,11 +101,6 @@ public class KafkaMessagePublisherSteps {
         }
     }
 
-    @Given("the partition key is {string}")
-    public void thePartitionKeyIs(String partitionKey) {
-        this.partitionKey = partitionKey;
-    }
-
     @Given("the message key is {string}")
     public void theMessageKeyIs(String messageKey) {
         this.messageKeyString = messageKey;
@@ -132,21 +116,21 @@ public class KafkaMessagePublisherSteps {
     @When("the message is published")
     public void theMessageIsPublished() {
         textWorld.setLastException(catchThrowable(() ->
-                publisherService.publish(topic, payload, partitionKey)
+                publisherService.publish(topic, payload, null, NoOpMessageTypeResolver.INSTANCE)
         ));
     }
 
     @When("the message is published with string key")
     public void theMessageIsPublishedWithStringKey() {
         textWorld.setLastException(catchThrowable(() ->
-                publisherService.publish(topic, payload, partitionKey, messageKeyString)
+                publisherService.publish(topic, payload, messageKeyString, NoOpMessageTypeResolver.INSTANCE)
         ));
     }
 
     @When("the message is published with byte key")
     public void theMessageIsPublishedWithByteKey() {
         textWorld.setLastException(catchThrowable(() ->
-                publisherService.publish(topic, payload, partitionKey, messageKeyBytes)
+                publisherService.publish(topic, payload, messageKeyBytes, NoOpMessageTypeResolver.INSTANCE)
         ));
     }
 
@@ -157,22 +141,6 @@ public class KafkaMessagePublisherSteps {
         assertThat(topicCaptor.getValue())
                 .as("topic")
                 .isEqualTo(topic);
-    }
-
-    @Then("the message headers should contain the partition key")
-    public void theMessageHeadersShouldContainThePartitionKey() {
-        var headers = messageCaptor.getValue().getHeaders();
-
-        assertThat(headers)
-                .as("headers")
-                .containsKey("partitionKey");
-
-        var actualPartitionKey = headers.get("partitionKey");
-        var expectedPartitionKey = partitionKey == null || partitionKey.isEmpty() ? "" : partitionKey;
-
-        assertThat(actualPartitionKey)
-                .as("partition key")
-                .isEqualTo(expectedPartitionKey);
     }
 
     @Then("the message headers should contain the message key")
@@ -209,23 +177,6 @@ public class KafkaMessagePublisherSteps {
             assertThat(actualKeyBytes)
                     .as("message key bytes")
                     .isEqualTo(messageKeyBytes);
-        }
-    }
-
-    @Then("the message type should be written to the payload")
-    public void theMessageTypeShouldBeWrittenToThePayload() {
-        if ("TypeAwareMessage".equals(payloadType)) {
-            verify(messageTypeResolver).writeMessageType(
-                    eq((TypeAwareMessage<?>) payload),
-                    eq(payloadAsMap),
-                    any(Map.class)
-            );
-        } else if ("Map".equals(payloadType)) {
-            verify(messageTypeResolver).writeMessageType(
-                    eq((Map<String, Object>) payload),
-                    eq(payloadAsMap),
-                    any(Map.class)
-            );
         }
     }
 

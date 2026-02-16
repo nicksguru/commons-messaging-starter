@@ -1,9 +1,9 @@
 package guru.nicks.commons.messaging.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import guru.nicks.commons.messaging.impl.KafkaMessagePublisherServiceImpl;
-import guru.nicks.commons.messaging.resolver.MessageTypeResolver;
 import guru.nicks.commons.messaging.service.MessagePublisherService;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -19,10 +19,9 @@ public class CommonsMessagingAutoConfiguration {
      */
     @ConditionalOnMissingBean(MessagePublisherService.class)
     @Bean
-    public MessagePublisherService messagePublisherService(StreamBridge streamBridge,
-            MessageTypeResolver messageTypeResolver, ObjectMapper objectMapper) {
+    public MessagePublisherService messagePublisherService(StreamBridge streamBridge, ObjectMapper objectMapper) {
         log.debug("Building {} bean", MessagePublisherService.class.getSimpleName());
-        return new KafkaMessagePublisherServiceImpl(streamBridge, messageTypeResolver, objectMapper);
+        return new KafkaMessagePublisherServiceImpl(streamBridge, objectMapper);
     }
 
 }
