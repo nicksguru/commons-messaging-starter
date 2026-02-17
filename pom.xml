@@ -67,6 +67,16 @@
             <artifactId>jakarta.jms-api</artifactId>
         </dependency>
 
+        <!-- In-memory @Cacheable provider and programmatic cache, also fixes warning from Spring Cloud: 'Spring Cloud
+             LoadBalancer is currently working with default cache. You can switch to using Caffeine cache, by adding it
+             to the classpath.' See also:
+             https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.caching.provider.caffeine
+        -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
         <!-- @ConstraintArguments -->
         <dependency>
             <groupId>am.ik.yavi</groupId>
