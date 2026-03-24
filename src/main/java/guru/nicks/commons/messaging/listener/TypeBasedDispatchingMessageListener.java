@@ -143,7 +143,7 @@ public abstract class TypeBasedDispatchingMessageListener extends DispatchingMes
                                 .filter(not(UNKNOWN_MESSAGE_TYPE::equals))
                                 .map(messageType -> "'" + messageType + "'")
                                 .orElse("<UNKNOWN/UNBOUND>")
-                                + " -> "
+                                + " → "
                                 // consumer bound to this message type
                                 + mapEntry.getValue().getClass().getName()
                                 + "[payload: " + getExpectedPayloadClass(mapEntry.getValue()).getName() + "]")
