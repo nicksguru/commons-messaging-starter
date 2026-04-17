@@ -20,7 +20,6 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import static guru.nicks.commons.messaging.TypeAwareMessage.UNKNOWN_MESSAGE_TYPE;
 import static guru.nicks.commons.validation.dsl.ValiDsl.checkNotNull;
 import static java.util.function.Predicate.not;
 
@@ -50,11 +49,6 @@ public abstract class TypeBasedDispatchingMessageListener extends DispatchingMes
 
         this.messageTypeResolver = checkNotNull(messageTypeResolver,
                 _TypeBasedDispatchingMessageListenerArgumentsMeta.MESSAGETYPERESOLVER.name());
-        if (messageTypeResolver == this) {
-            log.warn("{} is self-referential (this listener implements the interface)",
-                    MessageTypeResolver.class.getSimpleName());
-        }
-
         var tmpMessageTypeToConsumer = new TreeMap<String, MessageConsumer>();
 
         findLinkedMessageConsumers().forEach(consumer -> {
@@ -83,14 +77,14 @@ public abstract class TypeBasedDispatchingMessageListener extends DispatchingMes
 
     /**
      * Finds message consumer(s) based on {@link #readMessageType(Message)}. If no consumers are found, falls back on
-     * those bound to {@link TypeAwareMessage#UNKNOWN_MESSAGE_TYPE}.
+     * those bound to {@link MessageTypeResolver#UNKNOWN_MESSAGE_TYPE}.
      *
      * @param message message
      * @return consumers, possibly empty
      */
     @Override
     protected Optional<MessageConsumer> findMessageConsumer(Message<Map<String, Object>> message) {
-        String messageType = readMessageType(message).orElse(UNKNOWN_MESSAGE_TYPE);
+        String messageType = readMessageType(message);
         MessageConsumer consumer = messageTypeToConsumer.get(messageType);
 
         if (consumer == null) {
@@ -105,7 +99,7 @@ public abstract class TypeBasedDispatchingMessageListener extends DispatchingMes
      */
     @ConstraintArguments
     @Override
-    public Optional<String> readMessageType(Message<Map<String, Object>> source) {
+    public String readMessageType(Message<Map<String, Object>> source) {
         checkNotNull(source, _TypeBasedDispatchingMessageListenerReadMessageTypeArgumentsMeta.SOURCE.name());
         return messageTypeResolver.readMessageType(source);
     }
@@ -159,7 +153,7 @@ public abstract class TypeBasedDispatchingMessageListener extends DispatchingMes
      * Returns message type the given consumer is bound to:
      * <ul>
      *  <li>if {@link MessageConsumer#consumeUnknownMessageTypes()} is {@code true}, it's
-     *      {@value TypeAwareMessage#UNKNOWN_MESSAGE_TYPE}</li>
+     *      {@link MessageTypeResolver#UNKNOWN_MESSAGE_TYPE}</li>
      *  <li>otherwise {@link MessageType#getMessageBrokerValue()} is called on the payload object instantiated for that
      *      purpose (its class must inherit from {@link TypeAwareMessage} in that case)</li>
      * </ul>

@@ -7,7 +7,6 @@ import guru.nicks.commons.messaging.service.MessagePublisherService;
 import org.springframework.messaging.Message;
 
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * To be used in cases where a certain message topic has no concept of message types. Pass {@link #INSTANCE} to
@@ -19,9 +18,12 @@ public interface NoOpMessageTypeResolver extends MessageTypeResolver {
     MessageTypeResolver INSTANCE = new NoOpMessageTypeResolver() {
     };
 
+    /**
+     * @return {@link MessageTypeResolver#UNKNOWN_MESSAGE_TYPE}
+     */
     @Override
-    default Optional<String> readMessageType(Message<Map<String, Object>> source) {
-        return Optional.empty();
+    default String readMessageType(Message<Map<String, Object>> source) {
+        return UNKNOWN_MESSAGE_TYPE;
     }
 
     @Override

@@ -15,7 +15,6 @@ import org.springframework.messaging.MessageHeaders;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -25,7 +24,7 @@ public class HeaderBasedMessageTypeResolverSteps {
 
     private HeaderBasedMessageTypeResolver resolver;
     private Message<Map<String, Object>> message;
-    private Optional<String> result;
+    private String result;
 
     private Map<String, Object> targetPayload;
     private Map<String, Object> targetHeaders;

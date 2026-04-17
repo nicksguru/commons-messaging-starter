@@ -14,12 +14,19 @@ import java.util.Optional;
 public interface MessageTypeResolver {
 
     /**
-     * Finds out message type.
+     * Not {@code null} because it may not be allowed in map keys for mapping message types to consumers. All code MUST
+     * refer to this constant for consistency.
+     */
+    String UNKNOWN_MESSAGE_TYPE = "";
+
+    /**
+     * Tries to find out message type.
      *
      * @param source message, must not be {@code null}
-     * @return message type - if detected, then a non-blank string
+     * @return message type - if not detected, then {@link #UNKNOWN_MESSAGE_TYPE} ({@link Optional} would cause GC
+     *         pressure under high load)
      */
-    Optional<String> readMessageType(Message<Map<String, Object>> source);
+    String readMessageType(Message<Map<String, Object>> source);
 
     /**
      * Stores message type in payload or headers.

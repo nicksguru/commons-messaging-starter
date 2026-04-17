@@ -28,14 +28,16 @@ public class PayloadBasedMessageTypeResolver implements MessageTypeResolver {
     }
 
     /**
-     * Returns {@link #getPayloadMessageTypeField()} payload field value if it's not blank.
+     * @return {@link #getPayloadMessageTypeField()} payload field value if it's not blank, or
+     *         {@link MessageTypeResolver#UNKNOWN_MESSAGE_TYPE} otherwise
      */
     @Override
-    public Optional<String> readMessageType(Message<Map<String, Object>> source) {
+    public String readMessageType(Message<Map<String, Object>> source) {
         return Optional.ofNullable(source.getPayload())
                 .map(map -> map.get(payloadMessageTypeField))
                 .map(Object::toString)
-                .filter(StringUtils::isNotBlank);
+                .filter(StringUtils::isNotBlank)
+                .orElse(UNKNOWN_MESSAGE_TYPE);
     }
 
     /**

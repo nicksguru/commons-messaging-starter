@@ -32,14 +32,16 @@ public class HeaderBasedMessageTypeResolver implements MessageTypeResolver {
     }
 
     /**
-     * Returns {@link #getHeaderMessageTypeField()} message header if it's not blank.
+     * @return {@link #getHeaderMessageTypeField()} message header if it's not blank, or
+     *         {@link MessageTypeResolver#UNKNOWN_MESSAGE_TYPE} otherwise
      */
     @Override
-    public Optional<String> readMessageType(Message<Map<String, Object>> source) {
+    public String readMessageType(Message<Map<String, Object>> source) {
         return Optional.of(source.getHeaders())
                 .map(map -> map.get(headerMessageTypeField))
                 .map(Object::toString)
-                .filter(StringUtils::isNotBlank);
+                .filter(StringUtils::isNotBlank)
+                .orElse(UNKNOWN_MESSAGE_TYPE);
     }
 
     /**

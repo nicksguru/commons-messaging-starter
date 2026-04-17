@@ -3,6 +3,7 @@ package guru.nicks.commons.cucumber;
 import guru.nicks.commons.cucumber.world.TextWorld;
 import guru.nicks.commons.messaging.MessageType;
 import guru.nicks.commons.messaging.TypeAwareMessage;
+import guru.nicks.commons.messaging.resolver.MessageTypeResolver;
 import guru.nicks.commons.messaging.resolver.PayloadBasedMessageTypeResolver;
 
 import io.cucumber.java.After;
@@ -22,7 +23,6 @@ import org.springframework.messaging.support.GenericMessage;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
@@ -45,7 +45,7 @@ public class PayloadBasedMessageTypeResolverSteps {
     private Map<String, Object> sourcePayload;
     private Map<String, Object> targetPayload;
     private Map<String, Object> targetHeaders;
-    private Optional<String> result;
+    private String result;
 
     @Before
     public void beforeEachScenario() {
@@ -149,11 +149,11 @@ public class PayloadBasedMessageTypeResolverSteps {
         if (expectedValue.isEmpty()) {
             assertThat(result)
                     .as("result")
-                    .isEmpty();
+                    .isEqualTo(MessageTypeResolver.UNKNOWN_MESSAGE_TYPE);
         } else {
             assertThat(result)
                     .as("result")
-                    .isPresent()
+                    .isNotNull()
                     .contains(expectedValue);
         }
     }
@@ -162,7 +162,7 @@ public class PayloadBasedMessageTypeResolverSteps {
     public void theResultShouldBeEmpty() {
         assertThat(result)
                 .as("result")
-                .isEmpty();
+                .isEqualTo(MessageTypeResolver.UNKNOWN_MESSAGE_TYPE);
     }
 
     @Then("the target payload should contain key {string} with value {string}")

@@ -12,12 +12,6 @@ import java.util.Map;
 public interface TypeAwareMessage<T extends MessageType> {
 
     /**
-     * This is simply {@code ''} ({@code null} may not be allowed in map keys/values). All code must refer to this
-     * constant for consistency.
-     */
-    String UNKNOWN_MESSAGE_TYPE = "";
-
-    /**
      * Rendered by {@link MessageTypeResolver#writeMessageType(TypeAwareMessage, Map, Map)}, not by JSON serialization.
      */
     @JsonIgnore

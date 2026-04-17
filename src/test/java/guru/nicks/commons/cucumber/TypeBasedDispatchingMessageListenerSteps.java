@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
@@ -100,7 +99,7 @@ public class TypeBasedDispatchingMessageListenerSteps {
     @Given("a message type resolver that resolves message type to {string}")
     public void aMessageTypeResolverThatResolvesMessageTypeTo(String messageType) {
         when(mockMessageTypeResolver.readMessageType(any()))
-                .thenReturn(Optional.ofNullable(messageType.isEmpty() ? null : messageType));
+                .thenReturn(messageType.isBlank() ? MessageTypeResolver.UNKNOWN_MESSAGE_TYPE : messageType);
     }
 
     @When("a message with type {string} is received")
@@ -111,7 +110,7 @@ public class TypeBasedDispatchingMessageListenerSteps {
 
         testMessage = MessageBuilder.createMessage(payload, new MessageHeaders(new HashMap<>()));
         when(mockMessageTypeResolver.readMessageType(testMessage))
-                .thenReturn(Optional.of(messageType));
+                .thenReturn(messageType.isBlank() ? MessageTypeResolver.UNKNOWN_MESSAGE_TYPE : messageType);
 
         listener.accept(testMessage);
     }
@@ -123,7 +122,7 @@ public class TypeBasedDispatchingMessageListenerSteps {
         testMessage = MessageBuilder.createMessage(payload, new MessageHeaders(new HashMap<>()));
 
         when(mockMessageTypeResolver.readMessageType(testMessage))
-                .thenReturn(Optional.empty());
+                .thenReturn(MessageTypeResolver.UNKNOWN_MESSAGE_TYPE);
 
         try {
             listener.accept(testMessage);
