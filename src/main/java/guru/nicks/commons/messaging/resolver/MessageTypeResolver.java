@@ -33,7 +33,7 @@ public interface MessageTypeResolver {
      *
      * @param sourcePayload where to retrieve the message type from (with {@link TypeAwareMessage#getType()})
      * @param targetPayload where to store the message type, in case it needs to be stored in payload
-     * @param targetHeaders headers container, in case the message type needs to be stored in a header
+     * @param targetHeaders where to store the message type, in case it needs to be stored in a header
      */
     void writeMessageType(TypeAwareMessage<?> sourcePayload, Map<String, Object> targetPayload,
             Map<String, Object> targetHeaders);
@@ -43,7 +43,7 @@ public interface MessageTypeResolver {
      *
      * @param sourcePayload where to retrieve the message type from
      * @param targetPayload where to store the message type, in case it needs to be stored in payload
-     * @param targetHeaders headers container, in case the message type needs to be stored in a header
+     * @param targetHeaders where to store the message type, in case it needs to be stored in a header
      */
     void writeMessageType(Map<String, Object> sourcePayload, Map<String, Object> targetPayload,
             Map<String, Object> targetHeaders);

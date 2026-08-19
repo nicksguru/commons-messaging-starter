@@ -18,6 +18,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 
 import static guru.nicks.commons.validation.dsl.ValiDsl.checkNotBlank;
@@ -73,19 +74,21 @@ public class KafkaMessagePublisherServiceImpl implements MessagePublisherService
         Map<String, Object> payloadAsMap = objectMapper.convertValue(payload, new TypeReference<>() {
         });
 
-        // MessageHeaders object is immutable, which doesn't fit here
-        Map<String, Object> headers = (messageKey != null)
-                ? Map.of(KafkaHeaders.KEY, messageKey)
-                : Map.of();
+        // WARNING: MessageHeaders are immutable, but MessageTypeResolver writes to headers/payload, therefore
+        // both payloadAsMap and headersAsMap MUST be mutable
+        Map<String, Object> headersAsMap = HashMap.newHashMap(2);
+        if (messageKey != null) {
+            headersAsMap.put(KafkaHeaders.KEY, messageKey);
+        }
 
         // retrieve message type out of known classes
         switch (payload) {
             case TypeAwareMessage<?> typeAwareMessage:
-                messageTypeResolver.writeMessageType(typeAwareMessage, payloadAsMap, headers);
+                messageTypeResolver.writeMessageType(typeAwareMessage, payloadAsMap, headersAsMap);
                 break;
 
             case Map map:
-                messageTypeResolver.writeMessageType(map, payloadAsMap, headers);
+                messageTypeResolver.writeMessageType(map, payloadAsMap, headersAsMap);
                 break;
 
             default:
@@ -94,7 +97,7 @@ public class KafkaMessagePublisherServiceImpl implements MessagePublisherService
                         + "]: " + payload.getClass());
         }
 
-        Message<Map<String, Object>> message = new GenericMessage<>(payloadAsMap, headers);
+        Message<Map<String, Object>> message = new GenericMessage<>(payloadAsMap, headersAsMap);
 
         // don't log raw payload, rather mask it (convert to JSON first)
         try {
